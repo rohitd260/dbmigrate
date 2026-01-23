@@ -34,37 +34,35 @@ pipeline {
         stage('Detect Migration Changes') {
             steps {
                 script {
-                    def migrationDetected = sh(
-                        script: '''
-                            set +e
-                            
-                            # Get current branch name from Jenkins environment or git
-                            if [ -n "$GIT_BRANCH" ]; then
-                                CURRENT_BRANCH=$(echo $GIT_BRANCH | sed 's|origin/||')
-                            else
-                                CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --abbrev-ref HEAD)
-                            fi
-                            
-                            echo "Current branch: $CURRENT_BRANCH" >&2
-                            
-                            if [ -d "$MIG_DIR" ]; then
-                                # Check for migration changes in the last commit
-                                if git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -q "^$MIG_DIR/"; then
-                                    echo "DB migration changes detected" >&2
-                                    echo "true"
-                                else
-                                    echo "No DB migration changes detected" >&2
-                                    echo "false"
-                                fi
-                            else
-                                echo "Migration directory not found, skipping detection" >&2
-                                echo "false"
-                            fi
-                        ''',
-                        returnStdout: true
-                    ).trim()
+                    def migrationDetected = false
                     
-                    env.DETECT_MIGRATION = migrationDetected
+                    // Get the changeset from Jenkins
+                    def changeLogSets = currentBuild.changeSets
+                    
+                    echo "Checking for migration changes in changeset..."
+                    
+                    for (changeSet in changeLogSets) {
+                        for (entry in changeSet.items) {
+                            for (file in entry.affectedFiles) {
+                                def filePath = file.path
+                                echo "Changed file: ${filePath}"
+                                
+                                if (filePath.startsWith(env.MIG_DIR + '/')) {
+                                    echo "DB migration changes detected in: ${filePath}"
+                                    migrationDetected = true
+                                    break
+                                }
+                            }
+                            if (migrationDetected) break
+                        }
+                        if (migrationDetected) break
+                    }
+                    
+                    if (!migrationDetected) {
+                        echo "No DB migration changes detected"
+                    }
+                    
+                    env.DETECT_MIGRATION = migrationDetected.toString()
                     echo "DETECT_MIGRATION set to: ${env.DETECT_MIGRATION}"
                 }
             }
@@ -90,6 +88,7 @@ pipeline {
         stage('Stopping ECS Daemon Service...') {
             when {
                 expression { env.DETECT_MIGRATION == 'true' }
+                changeset "${MIG_DIR}/**"
             }
             steps {
                 script {
@@ -134,6 +133,7 @@ pipeline {
         stage('Starting ECS Daemon Service...') {
             when {
                 expression { env.DETECT_MIGRATION == 'true' }
+                changeset "${MIG_DIR}/**"
             }
             steps {
                 script {
