@@ -87,7 +87,6 @@ pipeline {
 
         stage('Stopping ECS Daemon Service...') {
             when {
-                expression { env.DETECT_MIGRATION == 'true' }
                 changeset "${MIG_DIR}/**"
             }
             steps {
@@ -132,7 +131,6 @@ pipeline {
 
         stage('Starting ECS Daemon Service...') {
             when {
-                expression { env.DETECT_MIGRATION == 'true' }
                 changeset "${MIG_DIR}/**"
             }
             steps {
