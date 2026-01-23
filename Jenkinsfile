@@ -27,7 +27,7 @@ pipeline {
 
         stage('Initialize ECS Daemon Services') {
             steps {
-              sh 'Daemon initilzed'
+              sh 'echo "Daemon initialized"'
             }
         }
 
