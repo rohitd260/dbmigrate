@@ -31,42 +31,42 @@ pipeline {
             }
         }
 
-        stage('Detect Migration Changes') {
-            steps {
-                script {
-                    def migrationDetected = false
+        // stage('Detect Migration Changes') {
+        //     steps {
+        //         script {
+        //             def migrationDetected = false
                     
-                    // Get the changeset from Jenkins
-                    def changeLogSets = currentBuild.changeSets
+        //             // Get the changeset from Jenkins
+        //             def changeLogSets = currentBuild.changeSets
                     
-                    echo "Checking for migration changes in changeset..."
+        //             echo "Checking for migration changes in changeset..."
                     
-                    for (changeSet in changeLogSets) {
-                        for (entry in changeSet.items) {
-                            for (file in entry.affectedFiles) {
-                                def filePath = file.path
-                                echo "Changed file: ${filePath}"
+        //             for (changeSet in changeLogSets) {
+        //                 for (entry in changeSet.items) {
+        //                     for (file in entry.affectedFiles) {
+        //                         def filePath = file.path
+        //                         echo "Changed file: ${filePath}"
                                 
-                                if (filePath.startsWith(env.MIG_DIR + '/')) {
-                                    echo "DB migration changes detected in: ${filePath}"
-                                    migrationDetected = true
-                                    break
-                                }
-                            }
-                            if (migrationDetected) break
-                        }
-                        if (migrationDetected) break
-                    }
+        //                         if (filePath.startsWith(env.MIG_DIR + '/')) {
+        //                             echo "DB migration changes detected in: ${filePath}"
+        //                             migrationDetected = true
+        //                             break
+        //                         }
+        //                     }
+        //                     if (migrationDetected) break
+        //                 }
+        //                 if (migrationDetected) break
+        //             }
                     
-                    if (!migrationDetected) {
-                        echo "No DB migration changes detected"
-                    }
+        //             if (!migrationDetected) {
+        //                 echo "No DB migration changes detected"
+        //             }
                     
-                    env.DETECT_MIGRATION = migrationDetected.toString()
-                    echo "DETECT_MIGRATION set to: ${env.DETECT_MIGRATION}"
-                }
-            }
-        }
+        //             env.DETECT_MIGRATION = migrationDetected.toString()
+        //             echo "DETECT_MIGRATION set to: ${env.DETECT_MIGRATION}"
+        //         }
+        //     }
+        // }
 
         stage('Install Maven') {
             steps {
